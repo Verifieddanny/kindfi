@@ -1,120 +1,448 @@
----
-icon: file-lines
-cover: >-
-  https://images.unsplash.com/photo-1585693991691-d6d7d4b642c4?crop=entropy&cs=srgb&fm=jpg&ixid=M3wxOTcwMjR8MHwxfHNlYXJjaHw4fHxkb2N1bWVudCUyMGd1aWRlfGVufDB8fHx8MTczNjg0MjMzOXww&ixlib=rb-4.0.3&q=85
-coverY: -126
----
+# KindFi Integration & Usage Guide
 
-# OSS Contribution Guide
+## Table of Contents
+- [UI Components](#ui-components)
+  - [Basic UI Component Example](#1-basic-ui-component-example)
+  - [Complex Integration Scenerio](#2-complex-integration-scenerio)
+  - [State Management Example](#3-state-management-example)
+  - [Form Handling Example](#4-form-handling-example)
+- [Services Integration](#services-integration)
+  - [KYC Service Integration](#1-kyc-service-integration)
+  - [AI Service Integration](#2-ai-service-integration)
+  - [Database Integration](#3-database-integration-supabase)
 
-Created by: Roberto "Andler" Lucas Created time: December 17, 2024 4:38 AM Tags: Engineering, Guides, Product
+## UI Components
 
-Welcome to KindFi! We're thrilled to have you join us on this exciting journey of innovation and collaboration. This guide will be your compass as you navigate the rewarding process of contributing to our cutting-edge projects at the forefront of AI and Web3 technologies.
+### 1. Basic UI Component Example
 
-## Introduction
+The KindFi web application, located in the apps/web directory, utilizes React for building user interfaces. To illustrate basic usage of UI components, consider the following example of a button component:
 
-Our OSS Organization is on a mission to revolutionize the 4th Industrial Revolution by pushing the boundaries of what's possible with AI and Web3. As a contributor, you'll be joining a passionate, global community united by the vision of building a decentralized future where open-source AI organizations can flourish. 🚀 🎉
 
-Your contributions, no matter how big or small, will play a crucial role in shaping this exciting future. We can't wait to see the innovative ideas and unique perspectives you'll bring to our projects! 😏
+```tsx
+// File: ~/components/base/button.tsx
+import { Slot } from '@radix-ui/react-slot';
+import { type VariantProps, cva } from 'class-variance-authority';
+import { cn } from '~/lib/utils';
 
-## Code Contribution: Review Process
+const buttonVariants = cva(
+  'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0',
+  {
+    variants: {
+      variant: {
+        default: 'text-blue-700',
+        destructive: 'bg-destructive text-destructive-foreground hover:bg-destructive/90',
+        outline: 'border border-input bg-background text-black hover:text-blue-700',
+        secondary: 'bg-secondary text-secondary-foreground hover:bg-secondary/80',
+        ghost: 'hover:gradient-border-btn',
+        link: 'text-primary underline-offset-4 hover:underline',
+      },
+      size: {
+        default: 'h-10 px-4 py-2',
+        sm: 'h-9 rounded-md px-3',
+        lg: 'h-11 rounded-md px-8',
+        icon: 'h-10 w-10',
+      },
+    },
+    defaultVariants: {
+      variant: 'default',
+      size: 'default',
+    },
+  },
+);
 
-### Automated Reviews
+export interface ButtonProps
+  extends React.ButtonHTMLAttributes<HTMLButtonElement>,
+    VariantProps<typeof buttonVariants> {
+  asChild?: boolean;
+}
 
-Our trusty AI sidekick, [CodeRabbitAI](https://www.coderabbit.ai/), will be the first to review your code, checking for style consistency, potential bugs, and performance improvements. It will suggest code and provide sometimes critical thinking, these can make more sense if we teach it the logic behind by starting a conversation with CodeRabbitAi.
+const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
+  ({ className, variant, size, asChild = false, ...props }, ref) => {
+    const Comp = asChild ? Slot : 'button';
+    return (
+      <Comp
+        className={cn(buttonVariants({ variant, size, className }))}
+        ref={ref}
+        {...props}
+      />
+    );
+  },
+);
 
-### Human Reviews
 
-Once the AI review is complete or under review, a project lead will take a closer look at your changes, evaluating the design, architecture, and overall fit within the project's goals. Making also conversations with CodeRabbitAi to dive deeper into details with the codebase. Project lead may or may not close any open feedback given by the AI.
+Button.displayName = 'Button';
 
-> ⚠️ If project lead notices that the AI feedback is not accurate, they will start a conversation with CodeRabbitAi to improve the AI feedback and, as contributor, you can do the same. Additionally, if project lead notice that commits are not signed, it will be rejected and ask to re-upload the commits with the proper signature.
+export { Button, buttonVariants };
 
-### Addressing Feedback
+```
+### Usage 
 
-When you receive feedback on your changes:
+```tsx
+// File: ~/app/home/page.tsx
+import { Button } from '~/components/base/button';
 
-1. Take the time to thoroughly understand the suggestions and ask for clarification if needed.
-2. Implement the requested changes in your code with care and precision.
-3. Commit the revisions and push them to your branch. Make sure they are signed.
-4. Notify the reviewers that you've addressed their feedback and your code is ready for another round of review.
+const Home = () => {
+  const handleClick = () => {
+    alert('Button clicked!');
+  };
 
-If your changes are approved, they'll be merged into the main project. If further iteration is needed, use the provided feedback as a guide to refine your work and resubmit.
+  return (
+    <div>
+      <h1>Welcome to KindFi</h1>
+      <Button onClick={handleClick}>Click Me</Button>
+    </div>
+  );
+};
 
-## Design Contribution: Review Process
+export default Home;
+```
+In this example, the Button component is a reusable UI element that can be integrated into various parts of the application.
 
-Our design workflow is built around Figma as our primary design tool. Here's our comprehensive contribution process. Similar to our code review process, design contributions follow a structured workflow through GitHub and Figma:
+### 2. Complex Integration Scenerio
+For more complex scenarios, such as integrating third-party libraries, the project employs components like react-dropzone for file uploads. The react-dropzone library provides a simple way to create an HTML5-compliant drag-and-drop zone for files. Documentation and examples are available at https://react-dropzone.js.org.
 
-### Design Review Workflow
+Comment on lines +101 to +103
+Contributor
+@coderabbitai coderabbitai bot Feb 27, 2025
 
-1. Create designs in the designated Figma workspace.
-2. Follow our naming conventions and organization structure.
-3. Request review by tagging project leads in both GitHub and Figma.
-4. Address feedback through Figma comments while keeping the GitHub issue updated. Use this [GitHub plugin from Figma](https://www.figma.com/community/plugin/1220512233196109878/github) to link them efficiently.
-5. Continue iteration until a project lead approves the design.
+⚠️ Potential issue
 
-### Quality Requirements
+Typo in Section Heading
+The heading "Complex Integration Scenerio" appears to contain a typo. Consider changing "Scenerio" to "Scenario" for improved clarity and professionalism.
+🧰 Tools
 
-Project leads verify these essential elements:
 
-- Alignment with design system guidelines.
-- Implementation of proper layout and constraints.
-- Component reusability and modularity.
-- Accessibility compliance.
-- Responsive design implementation.
+@victorbuikem
+### Example
+```tsx
+// File: ~/components/sections/project/project-media.tsx
+'use client';
 
-## Issue Application Template
+import { useCallback } from 'react';
+import { useDropzone } from 'react-dropzone';
+import { Card } from '~/components/base/card';
+import { Input } from '~/components/base/input';
 
-[**Issue Application Template**](https://github.com/kindfi-org/kindfi/blob/main/docs/OSS%20Contribution%20Guide%2015f8754a4a4b80709015ed37649d6058/Issue%20Application%20Template%201758754a4a4b80b18556d7d2ba79dbc0.md)
+interface ProjectMediaProps {
+  onFileUpload: (file: File) => void;
+  onVideoUrlChange: (url: string) => void;
+  videoUrl?: string;
+}
 
-## Issue Reporting
+export function ProjectMedia({
+  onFileUpload,
+  onVideoUrlChange,
+  videoUrl = '',
+  onFileUpload,
+  onVideoUrlChange,
+  videoUrl = '',
+}: ProjectMediaProps) {
+  const onDrop = useCallback(
+    (acceptedFiles: File[]) => {
+      const file = acceptedFiles[0];
+      if (file && file.size <= 10 * 1024 * 1024) {
+        // 10MB limit
+        onFileUpload(file);
+      }
+    },
+    [onFileUpload],
+  );
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    onDrop,
+    accept: {
+      'application/pdf': ['.pdf'],
+      'application/vnd.openxmlformats-officedocument.presentationml.presentation': ['.pptx'],
+    },
+    maxFiles: 1,
+    maxSize: 10 * 1024 * 1024, // 10MB
+  });
 
-If you encounter a code bug or have a brilliant idea for a new feature, don't hesitate to raise an issue:
+  return (
+    <Card className="p-6 shadow-md hover:shadow-lg transition-shadow">
+      <h3 className="text-xl font-semibold mb-4">Media & Attachments</h3>
+      <div className="space-y-6">
+        <div>
+          <h4 className="font-medium mb-2">Pitch Deck</h4>
+          <div
+            {...getRootProps()}
+            className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors ${
+              isDragActive ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-gray-400'
+            }`}
+          >
+            <input {...getInputProps()} />
+            <p className="text-gray-600">
+              {isDragActive ? 'Drop the file here...' : 'Drag & drop your pitch deck here, or click to select'}
+            </p>
+            <p className="text-sm text-gray-500 mt-1">PDF or PowerPoint, max 10MB</p>
+          </div>
+        </div>
+        <div>
+          <h4 className="font-medium mb-2">Video URL</h4>
+          <Input
+            type="url"
+            placeholder="Enter URL to your pitch video (YouTube, Vimeo, etc.)"
+            value={videoUrl}
+            onChange={(e) => onVideoUrlChange(e.target.value)}
+            className="w-full"
+          />
+          <p className="text-sm text-gray-500 mt-1">Optional: Add a video to enhance your pitch</p>
+        </div>
+      </div>
+    </Card>
+  );
+}
 
-1. Search the existing issues to ensure you're not duplicating a known concern.
-2. Choose a clear, descriptive title that encapsulates the core of the issue.
-3. Provide a detailed description, including steps to reproduce bugs or use cases for features.
-4. Apply relevant labels (e.g., "bug", "enhancement") to help categorize the issue. Ask admins to verify the labels.
-5. Maintain a respectful and understanding tone in your communications.
+```
 
-For design issue reporting, we maintain a clear connection between GitHub and Figma:
+### Usage
 
-1. Create a GitHub issue with comprehensive Figma design references.
-2. Include links to specific Figma frames and components.
-3. Conduct design discussions and feedback in Figma, linking relevant discussions in the GitHub issue.
-4. Keep Figma comments open until the issue is resolved.
-5. After resolution, close Figma comments while preserving them for future reference.
+```tsx
+// File: ~/app/projects/page.tsx
+import { ProjectMedia } from '~/components/sections/project/project-media';
 
-## Continuous Contribution
+export default function ProjectsPage() {
+  const handleFileUpload = (file: File) => {
+    console.log('File uploaded:', file.name);
+  };
+  const handleVideoUrlChange = (url: string) => {
+    console.log('Video URL updated:', url);
+  };
 
-At KindFi, we value long-term commitment and sustained contributions to our projects. We understand that meaningful development extends beyond hackathons and community events from OnlyDust contributors.
+  return (
+    <div className="space-y-8">
+      <ProjectMedia
+        onFileUpload={handleFileUpload}
+        onVideoUrlChange={handleVideoUrlChange}
+      />
+    </div>
+  );
+}
+```
 
-For contributors who maintain consistent involvement between hackathons and throughout different stages of KindFi's development, we offer enhanced budget allocations. This means:
+### 3. State Management Example 
 
-- Increased funding for your projects at the conclusion of hackathon events.
-- Additional resources allocated based on your sustained contribution history.
-- Special budget considerations during key development stages.
+For state management, KindFi uses React Context and server actions in Next.js 15. Here's an example:
 
-This incentive structure is designed to:
 
-1. Encourage continuous engagement with our projects.
-2. Reward dedication and persistent involvement.
-3. Support long-term development goals.
+```tsx
+// File: ~/context/project-context.tsx
+'use client';
 
-Remember, consistent contribution doesn't just mean code commits - it includes documentation updates, community support, and project maintenance. All these aspects are valued and considered in our budget allocation process.
+import { createContext, useContext, useReducer } from 'react';
 
-## Community and Support
+const initialState = {
+  projects: [],
+};
 
-We believe that a thriving community is the heart and soul of any successful open-source project. Here's how we cultivate a welcoming and supportive environment:
+const projectReducer = (state, action) => {
+  switch (action.type) {
+    case 'SET_PROJECTS':
+      return { ...state, projects: action.payload };
+    default:
+      return state;
+  }
+};
 
-- Communication channels in Telegram where you can connect with fellow contributors, ask questions, and share ideas.
-- The GitHub issue tracker, a hub for lively discussions, brainstorming sessions, and collaborative problem-solving.
-- Clear contribution guidelines and a code of conduct that ensure everyone feels respected and valued.
-- Recognition and celebration of individual contributions, acknowledging the hard work and dedication of our community members.
+const ProjectContext = createContext();
 
-Building a strong, inclusive community requires consistent effort and commitment from every one of us. By fostering an atmosphere of openness, empathy, and mutual support, we can achieve incredible things together.
+export const ProjectProvider = ({ children }) => {
+  const [state, dispatch] = useReducer(projectReducer, initialState);
 
----
+  return (
+    <ProjectContext.Provider value={{ state, dispatch }}>
+      {children}
+    </ProjectContext.Provider>
+  );
+};
 
-We're thrilled to have you join us on this exciting open-source journey. Your contributions, ideas, and enthusiasm are what make our projects truly exceptional! Together, we'll push the boundaries of what's possible with AI and Web3, and shape a future where innovation knows no limits 💪🏼
+export const useProject = () => useContext(ProjectContext);
+```
 
-So dive in, explore the codebase, and start making your mark. We can't wait to see the amazing contributions you'll bring to our community. Let's build something extraordinary together!
+### Using a fetch request
+
+Making a fetch Request from your API
+```tsx
+// File: ~/app/projects/page.tsx
+export default function async Page(){
+  const response = await fetch(`${process.env.API_BASE_URL}/api/projects`);
+  if (!response.ok) throw new Error("Failed to fetch projects");
+  const projects = await response.json();
+
+  return (
+    <div>
+      <h1>Projects</h1>
+      <ul>
+        {state.projects.map((project) => (
+          <li key={project.id}>{project.name}</li>
+        ))}
+      </ul>
+    </div>
+  );
+};
+
+```
+This approach ensures predictable state transitions and makes the application easier to debug and maintain.
+
+### 4. Form Handling Example
+
+For form handling, KindFi uses server actions in Next.js 15. Here's an example:
+
+```tsx
+// File: ~/components/forms/contribution-form.tsx
+'use client';
+
+import { useState } from 'react';
+
+export default function ContributionForm({ onSubmit }) {
+  const [amount, setAmount] = useState('');
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    onSubmit(amount);
+  };
+
+  return (
+    <form onSubmit={handleSubmit}>
+      <label>
+        Contribution Amount:
+        <input
+          type="number"
+          value={amount}
+          onChange={(e) => setAmount(e.target.value)}
+        />
+      </label>
+      <button type="submit">Contribute</button>
+    </form>
+  );
+}
+```
+
+### Usage with Server Action
+
+```tsx
+
+// File: ~/app/projects/[id]/page.tsx
+import ContributionForm from '~/components/forms/contribution-form';
+export default function ProjectDetails() {
+  const handleContribution = async (amount) => {
+    'use server';
+    console.log(`Contributed: ${amount}`);
+  };
+
+  return (
+    <div>
+      <h1>Project Details</h1>
+      <ContributionForm onSubmit={handleContribution} />
+    </div>
+  );
+}
+
+```
+
+## Service Integration
+### 1. KYC Service Integration
+
+```tsx
+// File: ~/services/kyc.ts
+export const submitKYC = async (baseUrl: string, data: any) => {
+  const formData = new FormData();
+  formData.append('userId', data.userId);
+  formData.append('documentType', data.documentType);
+  formData.append('documentFront', data.documentFront);
+  if (data.documentBack) formData.append('documentBack', data.documentBack);
+  formData.append('selfie', data.selfie);
+
+  const response = await fetch(`${baseUrl}/kyc/submit`, {
+    method: 'POST',
+    body: formData,
+  });
+
+  if (!response.ok) throw new Error('KYC submission failed');
+  return response.json();
+};
+
+export const checkKYCStatus = async (baseUrl: string, verificationId: string) => {
+  const response = await fetch(`${baseUrl}/kyc/status/${verificationId}`);
+  if (!response.ok) throw new Error('Failed to check KYC status');
+  return response.json();
+};
+```
+
+### 2. AI Service Integration
+```tsx
+// File: ~/services/ai.ts
+interface AICampaignAnalysis {
+  riskScore: number;
+  categoryPrediction: string;
+  suggestedImprovements: string[];
+}
+
+export const analyzeCampaign = async (
+  baseUrl: string,
+  apiKey: string,
+  campaignData: { title: string; description: string; goals: string[] },
+): Promise<AICampaignAnalysis> => {
+  const response = await fetch(`${baseUrl}/analyze`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify(campaignData),
+  });
+
+  if (!response.ok) throw new Error('Campaign analysis failed');
+  return response.json();
+};
+```
+
+### 3. Database Integration (Supabase)
+
+```tsx
+// File: ~/services/supabase.ts
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
+
+interface Campaign {
+  id: string;
+  title: string;
+  description: string;
+  target_amount: number;
+  current_amount: number;
+  creator_id: string;
+  status: 'draft' | 'active' | 'completed' | 'cancelled';
+  created_at: string;
+}
+
+export const createSupabaseClient = (supabaseUrl: string, supabaseKey: string): SupabaseClient => {
+  return createClient(supabaseUrl, supabaseKey);
+};
+
+export const createCampaign = async (
+  supabase: SupabaseClient,
+  campaign: Omit<Campaign, 'id' | 'created_at'>,
+) => {
+  const { data, error } = await supabase.from('campaigns').insert(campaign).select().single();
+  if (error) throw error;
+  return data;
+};
+
+export const getCampaign = async (supabase: SupabaseClient, id: string) => {
+  const { data, error } = await supabase
+    .from('campaigns')
+    .select('*, creator:profiles(*)')
+    .eq('id', id)
+    .single();
+  if (error) throw error;
+  return data;
+};
+
+export const updateCampaign = async (
+  supabase: SupabaseClient,
+  id: string,
+  updates: Partial<Campaign>,
+) => {
+  const { data, error } = await supabase.from('campaigns').update(updates).eq('id', id).select().single();
+  if (error) throw error;
+  return data;
+};
+```
